@@ -109,21 +109,26 @@ class DevelopmentAdmin extends Controller {
 	}
 	
 	public function runRegisteredController(SS_HTTPRequest $request){
-		$baseUrlPart = $request->param('Action');
+		$controllerClass = self::getRegisteredController($request->param('Action'));
 
-		$reg = Config::inst()->get(__CLASS__, 'registered_controllers');
-		if(isset($reg[$baseUrlPart])){
-			$controllerClass = $reg[$baseUrlPart]['controller'];
-			return $controllerClass::create();
+		if($controllerClass){
+			return self::runController($controllerClass);
 		}
 		
-		$msg = 'Error: no controller registered in '.__CLASS__.' for: '.$baseUrlPart;
+		$msg = 'Error: no controller registered in '.__CLASS__.' for: '.$request->param('Action');
 		if(Director::is_cli()){
 			trigger_error($msg, E_USER_ERROR);
 		}else{
 			$this->httpError(500, $msg);
 		}
 	}
+	
+	
+	
+	
+	/*
+	 * Helper methods
+	 */
 	
 	/**
 	 * @return array of url => description
@@ -140,7 +145,20 @@ class DevelopmentAdmin extends Controller {
 		return $links;
 	}
 	
-
+	public static function getRegisteredController($baseUrlPart){
+		$reg = Config::inst()->get(__CLASS__, 'registered_controllers');
+		
+		if(isset($reg[$baseUrlPart])){
+			$controllerClass = $reg[$baseUrlPart]['controller'];
+			return $controllerClass;
+		}
+		
+		return null;
+	}
+	
+	public static function runController($controllerClass){
+		return $controllerClass::create();
+	}
 
 	
 	
